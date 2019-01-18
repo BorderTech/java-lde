@@ -1,6 +1,5 @@
 package com.github.bordertech.lde.tomcat;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -22,7 +21,6 @@ import org.apache.tomcat.util.scan.StandardJarScanner;
 public class MavenStandardJarScanner extends StandardJarScanner {
 
 	@Override
-	@SuppressFBWarnings(value = "DMI_COLLECTION_OF_URLS", justification = "The set of URLs is from TOMCAT method")
 	protected void doScanClassPath(final JarScanType scanType, final ServletContext context, final JarScannerCallback callback,
 			final Set<URL> processedURLs) {
 		// Process maven class paths as WebApp
