@@ -19,6 +19,29 @@
 		<bt.qa.skip>false</bt.qa.skip>
 	</properties>
 
+	<description>
+		Embedded Local Development Environment (LDE) web server provider.
+	</description>
+
+	<url>https://github.com/bordertech/java-lde</url>
+
+	<scm>
+		<url>https://github.com/bordertech/java-lde</url>
+		<connection>scm:git:https://github.com/bordertech/java-lde.git</connection>
+		<developerConnection>scm:git:https://github.com/bordertech/java-lde.git</developerConnection>
+		<tag>java-lde-1.0.0</tag>
+	</scm>
+
+	<issueManagement>
+		<system>GitHub</system>
+		<url>https://github.com/bordertech/java-lde/issues</url>
+	</issueManagement>
+
+	<ciManagement>
+		<system>Travis CI</system>
+		<url>https://travis-ci.com/BorderTech/java-lde</url>
+	</ciManagement>
+
 	<dependencyManagement>
 		<dependencies>
 			<!-- Didums -->
