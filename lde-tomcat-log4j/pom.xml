@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<name>lde-tomcat-log4j</name>
+	<artifactId>lde-tomcat-log4j</artifactId>
+
+	<parent>
+		<groupId>com.github.bordertech.lde</groupId>
+		<artifactId>lde-parent</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<packaging>jar</packaging>
+
+	<properties>
+		<pmd.excludeFromFailureFile>${basedir}/pmd-exclude.properties</pmd.excludeFromFailureFile>
+	</properties>
+	
+	<dependencies>
+
+		<!-- Tomcat for LDE -->
+		<dependency>
+			<groupId>com.github.bordertech.lde</groupId>
+			<artifactId>lde-tomcat</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+		<!-- LOG4J -->
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.17</version>
+		</dependency>
+	</dependencies>
+
+</project>
