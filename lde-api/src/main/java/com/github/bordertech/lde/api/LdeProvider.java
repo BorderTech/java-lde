@@ -37,4 +37,14 @@ public interface LdeProvider<T> {
 	 */
 	boolean isFindPort();
 
+	/**
+	 * @return the base URL (with context)
+	 */
+	String getBaseUrl();
+
+	/**
+	 * @return true if server is running
+	 */
+	boolean isRunning();
+
 }

@@ -134,6 +134,30 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 	}
 
 	/**
+	 * @return the base URL (with context)
+	 */
+	@Override
+	public String getBaseUrl() {
+		// Check is running
+		Tomcat tom = getServer();
+		if (tom == null) {
+			return null;
+		}
+		// Get parts of URL
+		String host = "localhost";
+		String scheme = tom.getConnector().getScheme();
+		int port = tom.getConnector().getPort();
+		String contextPath = getContextPath();
+		// Build URL
+		return scheme + "://" + host + ":" + port + contextPath;
+	}
+
+	@Override
+	public boolean isRunning() {
+		return getServer() != null;
+	}
+
+	/**
 	 * Wait for TOMCAT to start.
 	 *
 	 * @throws LifecycleException life cycle exception occurred
@@ -207,18 +231,7 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 		final String libDir = getLibDir();
 		final String classesDir = getClassesDir();
 
-		// Add Maven target class paths (if any)
-		if (MAVEN_PATHS) {
-			context.setJarScanner(new MavenStandardJarScanner());
-		}
-
-		// Scan for Annotations
-		JarScanner scanner = context.getJarScanner();
-		if (scanner instanceof StandardJarScanner) {
-			StandardJarScanner std = (StandardJarScanner) scanner;
-			std.setScanManifest(false);
-			std.setScanAllFiles(true);
-		}
+		configJarScanner(context);
 
 		WebResourceRoot resources = new StandardRoot(context);
 		context.setResources(resources);
@@ -336,4 +349,29 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 			return false;
 		}
 	}
+
+	/**
+	 * Configure how to scan the jars in the tomcat classpath.
+	 *
+	 * @param context the server context
+	 * @throws IOException an IO Exception
+	 * @throws ServletException a servlet exception
+	 */
+	protected void configJarScanner(final Context context) throws IOException, ServletException {
+
+		// Add Maven target class paths (if any)
+		if (MAVEN_PATHS) {
+			context.setJarScanner(new MavenStandardJarScanner());
+		}
+
+		// Scan for Annotations
+		JarScanner scanner = context.getJarScanner();
+		if (scanner instanceof StandardJarScanner) {
+			StandardJarScanner std = (StandardJarScanner) scanner;
+			std.setScanManifest(false);
+			std.setScanAllFiles(true);
+		}
+
+	}
+
 }

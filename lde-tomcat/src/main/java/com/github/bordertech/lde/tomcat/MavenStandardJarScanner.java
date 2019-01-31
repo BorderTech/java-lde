@@ -14,8 +14,8 @@ import org.apache.tomcat.util.scan.StandardJarScanner;
 /**
  * Include the maven target classes when scanning the class path.
  * <p>
- * This is needed to pick up the classes on the dependant maven project modules as they are above the "webapp" class
- * loader and their annotations are not scanned.
+ * This is needed to pick up the classes on the dependant maven project modules as they are above the "webapp" class loader and their annotations are
+ * not scanned.
  * </p>
  */
 public class MavenStandardJarScanner extends StandardJarScanner {
@@ -63,7 +63,7 @@ public class MavenStandardJarScanner extends StandardJarScanner {
 	 * Check if need to add classpath entry to tomcat class path.
 	 *
 	 * @param classPathEntry the class path entry
-	 * @return true ig entry is a project dependency
+	 * @return true if entry is a project dependency
 	 */
 	protected boolean isProjectDependency(final String classPathEntry) {
 		return classPathEntry.endsWith("classes") || classPathEntry.contains("SNAPSHOT");

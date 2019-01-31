@@ -52,4 +52,14 @@ public class MockProvider implements LdeProvider {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
+	@Override
+	public String getBaseUrl() {
+		return "base";
+	}
+
+	@Override
+	public boolean isRunning() {
+		return isStarted();
+	}
+
 }
