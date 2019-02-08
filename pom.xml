@@ -5,7 +5,7 @@
 	<groupId>com.github.bordertech.lde</groupId>
 	<name>lde-parent</name>
 	<artifactId>lde-parent</artifactId>
-	<version>1.0.1</version>
+	<version>1.0.2-SNAPSHOT</version>
 
 	<parent>
 		<groupId>com.github.bordertech.common</groupId>
@@ -29,7 +29,7 @@
 		<url>https://github.com/bordertech/java-lde</url>
 		<connection>scm:git:https://github.com/bordertech/java-lde.git</connection>
 		<developerConnection>scm:git:https://github.com/bordertech/java-lde.git</developerConnection>
-		<tag>lde-parent-1.0.1</tag>
+		<tag>java-lde-1.0.0</tag>
 	</scm>
 
 	<issueManagement>
