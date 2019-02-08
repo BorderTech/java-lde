@@ -1,6 +1,7 @@
 package com.github.bordertech.lde.tomcat;
 
 import com.github.bordertech.config.Config;
+import com.github.bordertech.didums.Didums;
 import com.github.bordertech.lde.api.LdeProvider;
 import java.io.File;
 import java.io.IOException;
@@ -37,11 +38,6 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 	 * The directory to install tomcat relative to work directory.
 	 */
 	private static final String BASE_DIR = Config.getInstance().getString("lde.tomcat.base.dir", "/target/tomcat");
-
-	/**
-	 * Append the maven target classes as a webapp class path.
-	 */
-	private static final boolean MAVEN_PATHS = Config.getInstance().getBoolean("lde.tomcat.maven.paths", true);
 
 	/**
 	 * The webapp directory (ie static resources) relative to work directory.
@@ -359,17 +355,16 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 	 */
 	protected void configJarScanner(final Context context) throws IOException, ServletException {
 
-		// Add Maven target class paths (if any)
-		if (MAVEN_PATHS) {
-			context.setJarScanner(new MavenStandardJarScanner());
-		}
-
-		// Scan for Annotations
-		JarScanner scanner = context.getJarScanner();
-		if (scanner instanceof StandardJarScanner) {
-			StandardJarScanner std = (StandardJarScanner) scanner;
-			std.setScanManifest(false);
-			std.setScanAllFiles(true);
+		if (Didums.hasService(CustomJarScanner.class)) {
+			context.setJarScanner(Didums.getService(CustomJarScanner.class));
+		} else {
+			// Scan for Annotations on Standard Scanner
+			JarScanner scanner = context.getJarScanner();
+			if (scanner instanceof StandardJarScanner) {
+				StandardJarScanner std = (StandardJarScanner) scanner;
+				std.setScanManifest(false);
+				std.setScanAllFiles(true);
+			}
 		}
 
 	}
