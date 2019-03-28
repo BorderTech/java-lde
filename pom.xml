@@ -58,6 +58,7 @@
 		<module>lde-tomcat</module>
 		<module>lde-tomcat-commons-logging</module>
 		<module>lde-tomcat-log4j</module>
+		<module>lde-exec-maven-plugin</module>
 	</modules>
 
 </project>

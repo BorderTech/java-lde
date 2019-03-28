@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.URLClassLoader;
 import javax.servlet.ServletException;
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
@@ -20,9 +21,7 @@ import org.apache.catalina.webresources.DirResourceSet;
 import org.apache.catalina.webresources.StandardRoot;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.tomcat.JarScanner;
 import org.apache.tomcat.util.scan.Constants;
-import org.apache.tomcat.util.scan.StandardJarScanner;
 
 /**
  * Start Tomcat Server allowing for Servlet 3 config.
@@ -30,37 +29,19 @@ import org.apache.tomcat.util.scan.StandardJarScanner;
  * Simulate a WAR structure by defining a class directory and a lib directory.
  * </p>
  */
-public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
+public class TomcatLauncherProvider implements LdeProvider {
 
 	private static final Log LOG = LogFactory.getLog(TomcatLauncherProvider.class);
-
-	/**
-	 * The directory to install tomcat relative to work directory.
-	 */
 	private static final String BASE_DIR = Config.getInstance().getString("lde.tomcat.base.dir", "/target/tomcat");
-
-	/**
-	 * The webapp directory (ie static resources) relative to work directory.
-	 */
 	private static final String WEBAPP_DIR = Config.getInstance().getString("lde.tomcat.webapp.dir", "/target/webapp");
-
-	/**
-	 * The webapp classes directory relative to work directory (eg /target/classes).
-	 */
 	private static final String WEBAPP_CLASSES_DIR = Config.getInstance().getString("lde.tomcat.webapp.classes.dir");
-
-	/**
-	 * The webapp lib directory relative to work directory (eg /target/dependency).
-	 */
 	private static final String WEBAPP_LIB_DIR = Config.getInstance().getString("lde.tomcat.webapp.lib.dir", "/target/dependency");
-
 	private static final int DEFAULT_PORT = Config.getInstance().getInt("lde.tomcat.port", 8080);
-
 	private static final boolean FIND_PORT = Config.getInstance().getBoolean("lde.tomcat.port.find", false);
-
 	private static final String CONTEXT_PATH = Config.getInstance().getString("lde.tomcat.context.path", "/lde");
 
 	private Tomcat tomcat = null;
+	private Context context = null;
 
 	@Override
 	public void launchServer() {
@@ -70,58 +51,61 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 	@Override
 	public void launchServer(final boolean block) {
 		try {
-			// Config tomcat
-			if (tomcat != null) {
-				throw new IllegalStateException("TOMCAT already exists.");
+			// Check if already exists
+			if (isTomcatCreated()) {
+				throw new IllegalStateException("TOMCAT is already created.");
 			}
-			tomcat = new Tomcat();
+			// Create tomcat
+			setTomcat(createTomcatInstance());
+			setContext(null);
+			// Config tomcat
 			configTomcat();
-
-			tomcat.start();
+			// Start tomcat
+			Tomcat tom = getTomcat();
+			LOG.info("Starting TOMCAT.");
+			tom.start();
 			LOG.info("Started TOMCAT.");
 
 			// Wait till started
 			waitForTomcatToStart();
 			if (block) {
-				tomcat.getServer().await();
+				tom.getServer().await();
 			}
 		} catch (IOException | IllegalStateException | ServletException | LifecycleException e) {
 			LOG.error("Could not start LDE TOMCAT server. " + e.getMessage(), e);
+			setTomcat(null);
+			setContext(null);
 		}
 	}
 
 	@Override
 	public void stopServer() {
-		if (tomcat == null) {
+		// Check created before try and stop
+		if (!isTomcatCreated()) {
 			return;
 		}
 
+		Tomcat tom = getTomcat();
 		try {
 			// Stop server
-			tomcat.stop();
+			tom.stop();
 			LOG.info("Stopped TOMCAT.");
 
 			// Wait till server stopped
 			waitForTomcatToStop();
 
-			tomcat.destroy();
-			tomcat = null;
+			tom.destroy();
 		} catch (LifecycleException e) {
 			LOG.error("Could not STOP LDE TOMCAT server. " + e.getMessage(), e);
+		} finally {
+			setTomcat(null);
+			setContext(null);
 		}
-	}
-
-	@Override
-	public Tomcat getServer() {
-		return tomcat;
 	}
 
 	@Override
 	public int getPort() {
-		if (tomcat == null) {
-			return -1;
-		}
-		return tomcat.getConnector().getPort();
+		return isRunning() ? getTomcat().getConnector().getPort() : -1;
 	}
 
 	@Override
@@ -135,11 +119,11 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 	@Override
 	public String getBaseUrl() {
 		// Check is running
-		Tomcat tom = getServer();
-		if (tom == null) {
+		if (!isRunning()) {
 			return null;
 		}
 		// Get parts of URL
+		Tomcat tom = getTomcat();
 		String host = "localhost";
 		String scheme = tom.getConnector().getScheme();
 		int port = tom.getConnector().getPort();
@@ -150,7 +134,21 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 
 	@Override
 	public boolean isRunning() {
-		return getServer() != null;
+		return isTomcatCreated() && getTomcat().getServer().getState() == LifecycleState.STARTED;
+	}
+
+	/**
+	 * @return the tomcat instance or null if not running
+	 */
+	public Tomcat getTomcat() {
+		return tomcat;
+	}
+
+	/**
+	 * @return the WebApp context or null if not running
+	 */
+	public Context getContext() {
+		return context;
 	}
 
 	/**
@@ -159,14 +157,26 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 	 * @throws LifecycleException life cycle exception occurred
 	 */
 	protected void waitForTomcatToStart() throws LifecycleException {
+		// Check tomcat is created
+		if (!isTomcatCreated()) {
+			throw new IllegalStateException("Tomcat instance not created before checking if started.");
+		}
+
 		int i = 0;
-		while (tomcat.getServer().getState() != LifecycleState.STARTED) {
+		while (!isRunning()) {
 			waitInterval();
 			if (i++ > 10) {
-				tomcat.stop();
+				getTomcat().stop();
 				throw new IllegalStateException("Timeout waiting for TOMCAT to start");
 			}
 		}
+	}
+
+	/**
+	 * @return true if tomcat instance created
+	 */
+	protected boolean isTomcatCreated() {
+		return getTomcat() != null;
 	}
 
 	/**
@@ -176,7 +186,7 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 	 */
 	protected void waitForTomcatToStop() throws LifecycleException {
 		int i = 0;
-		while (tomcat.getServer().getState() != LifecycleState.STOPPED) {
+		while (getTomcat().getServer().getState() != LifecycleState.STOPPED) {
 			waitInterval();
 			if (i++ > 10) {
 				throw new IllegalStateException("Timeout waiting for TOMCAT to stop");
@@ -203,34 +213,65 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 	 * @throws ServletException a Servlet Exception
 	 */
 	protected void configTomcat() throws IOException, ServletException {
-
 		LOG.info("Configure TOMCAT.");
-
 		final int port = isFindPort() ? findFreePort() : getDefaultPort();
-		final String path = getContextPath();
 		final String baseDir = getBaseDir();
-		final String webAppDir = getWebAppDir();
-
-		tomcat.setPort(port);
-		tomcat.setBaseDir(baseDir);
-
-		Context context = tomcat.addWebapp(path, webAppDir);
-		configWebApp(context);
+		Tomcat tom = getTomcat();
+		tom.setPort(port);
+		tom.setBaseDir(baseDir);
+		// Create context
+		setContext(addWebAppContext());
+		configWebApp();
 	}
 
 	/**
-	 * @param context the context to configure
+	 * @param tomcat the tomcat instance
+	 */
+	protected void setTomcat(final Tomcat tomcat) {
+		this.tomcat = tomcat;
+	}
+
+	/**
+	 * @param context the context instance
+	 */
+	protected void setContext(final Context context) {
+		this.context = context;
+	}
+
+	/**
+	 * Create a tomcat instance.
+	 *
+	 * @return a new tomcat instance
+	 */
+	protected Tomcat createTomcatInstance() {
+		return new Tomcat();
+	}
+
+	/**
+	 * Add the web app context.
+	 *
+	 * @return the web app context
+	 */
+	protected Context addWebAppContext() {
+		final String path = getContextPath();
+		final String webAppDir = getWebAppDir();
+		return getTomcat().addWebapp(path, webAppDir);
+	}
+
+	/**
+	 * Configure the web app context.
+	 *
 	 * @throws IOException an IO Exception
 	 * @throws ServletException a Servlet Exception
 	 */
-	protected void configWebApp(final Context context) throws IOException, ServletException {
+	protected void configWebApp() throws IOException, ServletException {
 		final String libDir = getLibDir();
 		final String classesDir = getClassesDir();
 
-		configJarScanner(context);
+		Context ctx = getContext();
 
-		WebResourceRoot resources = new StandardRoot(context);
-		context.setResources(resources);
+		WebResourceRoot resources = new StandardRoot(ctx);
+		ctx.setResources(resources);
 		// Declare an alternative location for the "WEB-INF/lib" dir
 		if (libDir != null && !libDir.isEmpty()) {
 			resources.addPreResources(new DirResourceSet(resources, Constants.WEB_INF_LIB, libDir, "/"));
@@ -243,10 +284,39 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 		// Stop persistent sessions
 		StandardManager mgr = new StandardManager();
 		mgr.setPathname(null);
-		context.setManager(mgr);
+		ctx.setManager(mgr);
 
-		// Delay for requets to stop processing in milliseconds
-		((StandardContext) context).setUnloadDelay(10000);
+		// Delay for requests to stop processing in milliseconds
+		((StandardContext) ctx).setUnloadDelay(10000);
+
+		configCustomClassLoader();
+		configCustomJarScanner();
+
+	}
+
+	/**
+	 * Configure the WebApp context class loader.
+	 * <p>
+	 * Each WebApp context has its own class loader to isolate the class paths.
+	 * </p>
+	 */
+	protected void configCustomClassLoader() {
+		// Wrap the ClassLoader of the launcher so it is picked up StandardJarScanner
+		// as a "WebApp" class loader and it gets its classes scanned for annotations.
+		ClassLoader loader = getClass().getClassLoader();
+		if (loader instanceof URLClassLoader) {
+			ClassLoader wrapper = new URLClassLoader(((URLClassLoader) loader).getURLs(), loader);
+			getContext().setParentClassLoader(wrapper);
+		}
+	}
+
+	/**
+	 * Configure a custom jar scanner.
+	 */
+	protected void configCustomJarScanner() {
+		if (Didums.hasService(CustomJarScanner.class)) {
+			getContext().setJarScanner(Didums.getService(CustomJarScanner.class));
+		}
 	}
 
 	/**
@@ -257,6 +327,8 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 	}
 
 	/**
+	 * The WebApp context where "" is root.
+	 *
 	 * @return the webapp context path
 	 */
 	protected String getContextPath() {
@@ -264,6 +336,11 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 	}
 
 	/**
+	 * The Tomcat base folder on which all others will be derived.
+	 * <p>
+	 * The directory to install tomcat relative to work directory.
+	 * </p>
+	 *
 	 * @return the directory for TOMCAT to be installed.
 	 */
 	protected String getBaseDir() {
@@ -271,6 +348,11 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 	}
 
 	/**
+	 * WebApp directory for the context that can be used for static files.
+	 * <p>
+	 * The webapp directory (ie static resources) relative to work directory.
+	 * </p>
+	 *
 	 * @return the webapp directory
 	 */
 	protected String getWebAppDir() {
@@ -278,6 +360,11 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 	}
 
 	/**
+	 * Declare an alternative location for the "WEB-INF/lib" dir.
+	 * <p>
+	 * The webapp lib directory relative to work directory (eg /target/dependency).
+	 * </p>
+	 *
 	 * @return the lib directory
 	 */
 	protected String getLibDir() {
@@ -285,6 +372,8 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 	}
 
 	/**
+	 * Declare an alternative location for the "WEB-INF/classes" dir.
+	 *
 	 * @return the classes directory
 	 */
 	protected String getClassesDir() {
@@ -292,6 +381,7 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 	}
 
 	/**
+	 * Prefix a directory with the system user directory.
 	 *
 	 * @param dir the directory to append the working directory
 	 * @return the dir with the working directory prefix
@@ -316,6 +406,8 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 	}
 
 	/**
+	 * Find a free port to start tomcat with.
+	 *
 	 * @return the next free port starting with the default port
 	 */
 	protected int findFreePort() {
@@ -333,6 +425,8 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 	}
 
 	/**
+	 * Check if this port is available.
+	 *
 	 * @param port the port to check is available
 	 * @return true if port is available
 	 */
@@ -344,29 +438,6 @@ public class TomcatLauncherProvider implements LdeProvider<Tomcat> {
 		} catch (IOException e) {
 			return false;
 		}
-	}
-
-	/**
-	 * Configure how to scan the jars in the tomcat classpath.
-	 *
-	 * @param context the server context
-	 * @throws IOException an IO Exception
-	 * @throws ServletException a servlet exception
-	 */
-	protected void configJarScanner(final Context context) throws IOException, ServletException {
-
-		if (Didums.hasService(CustomJarScanner.class)) {
-			context.setJarScanner(Didums.getService(CustomJarScanner.class));
-		} else {
-			// Scan for Annotations on Standard Scanner
-			JarScanner scanner = context.getJarScanner();
-			if (scanner instanceof StandardJarScanner) {
-				StandardJarScanner std = (StandardJarScanner) scanner;
-				std.setScanManifest(false);
-				std.setScanAllFiles(true);
-			}
-		}
-
 	}
 
 }

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<name>lde-exec-maven-plugin</name>
+	<artifactId>lde-exec-maven-plugin</artifactId>
+
+	<parent>
+		<groupId>com.github.bordertech.lde</groupId>
+		<artifactId>lde-parent</artifactId>
+		<version>1.0.2-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<packaging>maven-plugin</packaging>
+
+	<properties>
+		<bt.qa.skip>true</bt.qa.skip>
+		<bt.fail.enforcer>false</bt.fail.enforcer>
+	</properties>
+
+	<dependencies>
+
+		<!-- LDE Provider API -->
+		<dependency>
+			<groupId>com.github.bordertech.lde</groupId>
+			<artifactId>lde-api</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+		<!-- Maven plugin dependencies -->
+		<dependency>
+			<groupId>org.apache.maven</groupId>
+			<artifactId>maven-plugin-api</artifactId>
+			<version>3.5.2</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.maven.plugin-tools</groupId>
+			<artifactId>maven-plugin-annotations</artifactId>
+			<version>3.5.2</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.maven</groupId>
+			<artifactId>maven-core</artifactId>
+			<version>3.5.2</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>27.0.1-jre</version>
+			<scope>provided</scope>
+		</dependency>
+
+	</dependencies>
+
+</project>
