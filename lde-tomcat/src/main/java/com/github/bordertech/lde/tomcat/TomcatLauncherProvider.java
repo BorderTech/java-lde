@@ -41,7 +41,6 @@ public class TomcatLauncherProvider implements LdeProvider {
 	private static final String CONTEXT_PATH = Config.getInstance().getString("lde.tomcat.context.path", "/lde");
 
 	private Tomcat tomcat = null;
-	private Context context = null;
 
 	@Override
 	public void launchServer() {
@@ -56,12 +55,11 @@ public class TomcatLauncherProvider implements LdeProvider {
 				throw new IllegalStateException("TOMCAT is already created.");
 			}
 			// Create tomcat
-			setTomcat(createTomcatInstance());
-			setContext(null);
+			Tomcat tom = createTomcatInstance();
+			setTomcat(tom);
 			// Config tomcat
-			configTomcat();
+			configTomcat(tom);
 			// Start tomcat
-			Tomcat tom = getTomcat();
 			LOG.info("Starting TOMCAT.");
 			tom.start();
 			LOG.info("Started TOMCAT.");
@@ -74,7 +72,6 @@ public class TomcatLauncherProvider implements LdeProvider {
 		} catch (IOException | IllegalStateException | ServletException | LifecycleException e) {
 			LOG.error("Could not start LDE TOMCAT server. " + e.getMessage(), e);
 			setTomcat(null);
-			setContext(null);
 		}
 	}
 
@@ -99,7 +96,6 @@ public class TomcatLauncherProvider implements LdeProvider {
 			LOG.error("Could not STOP LDE TOMCAT server. " + e.getMessage(), e);
 		} finally {
 			setTomcat(null);
-			setContext(null);
 		}
 	}
 
@@ -145,10 +141,10 @@ public class TomcatLauncherProvider implements LdeProvider {
 	}
 
 	/**
-	 * @return the WebApp context or null if not running
+	 * @return true if tomcat instance created
 	 */
-	public Context getContext() {
-		return context;
+	protected boolean isTomcatCreated() {
+		return getTomcat() != null;
 	}
 
 	/**
@@ -173,18 +169,16 @@ public class TomcatLauncherProvider implements LdeProvider {
 	}
 
 	/**
-	 * @return true if tomcat instance created
-	 */
-	protected boolean isTomcatCreated() {
-		return getTomcat() != null;
-	}
-
-	/**
 	 * Wait for TOMCAT to stop.
 	 *
 	 * @throws LifecycleException life cycle exception occurred
 	 */
 	protected void waitForTomcatToStop() throws LifecycleException {
+		// Check is created before try to stop
+		if (!isTomcatCreated()) {
+			return;
+		}
+
 		int i = 0;
 		while (getTomcat().getServer().getState() != LifecycleState.STOPPED) {
 			waitInterval();
@@ -209,19 +203,20 @@ public class TomcatLauncherProvider implements LdeProvider {
 	/**
 	 * Configure tomcat.
 	 *
+	 * @param tom the tomcat instance to configure
+	 *
 	 * @throws IOException an IO Exception
 	 * @throws ServletException a Servlet Exception
 	 */
-	protected void configTomcat() throws IOException, ServletException {
+	protected void configTomcat(final Tomcat tom) throws IOException, ServletException {
 		LOG.info("Configure TOMCAT.");
 		final int port = isFindPort() ? findFreePort() : getDefaultPort();
 		final String baseDir = getBaseDir();
-		Tomcat tom = getTomcat();
 		tom.setPort(port);
 		tom.setBaseDir(baseDir);
 		// Create context
-		setContext(addWebAppContext());
-		configWebApp();
+		Context context = addWebAppContext(tom);
+		configWebApp(context);
 	}
 
 	/**
@@ -229,13 +224,6 @@ public class TomcatLauncherProvider implements LdeProvider {
 	 */
 	protected void setTomcat(final Tomcat tomcat) {
 		this.tomcat = tomcat;
-	}
-
-	/**
-	 * @param context the context instance
-	 */
-	protected void setContext(final Context context) {
-		this.context = context;
 	}
 
 	/**
@@ -250,28 +238,28 @@ public class TomcatLauncherProvider implements LdeProvider {
 	/**
 	 * Add the web app context.
 	 *
+	 * @param tom the tomcat instance to add web app
 	 * @return the web app context
 	 */
-	protected Context addWebAppContext() {
+	protected Context addWebAppContext(final Tomcat tom) {
 		final String path = getContextPath();
 		final String webAppDir = getWebAppDir();
-		return getTomcat().addWebapp(path, webAppDir);
+		return tom.addWebapp(path, webAppDir);
 	}
 
 	/**
 	 * Configure the web app context.
 	 *
+	 * @param context the web app context to configure
 	 * @throws IOException an IO Exception
 	 * @throws ServletException a Servlet Exception
 	 */
-	protected void configWebApp() throws IOException, ServletException {
+	protected void configWebApp(final Context context) throws IOException, ServletException {
 		final String libDir = getLibDir();
 		final String classesDir = getClassesDir();
 
-		Context ctx = getContext();
-
-		WebResourceRoot resources = new StandardRoot(ctx);
-		ctx.setResources(resources);
+		WebResourceRoot resources = new StandardRoot(context);
+		context.setResources(resources);
 		// Declare an alternative location for the "WEB-INF/lib" dir
 		if (libDir != null && !libDir.isEmpty()) {
 			resources.addPreResources(new DirResourceSet(resources, Constants.WEB_INF_LIB, libDir, "/"));
@@ -284,13 +272,15 @@ public class TomcatLauncherProvider implements LdeProvider {
 		// Stop persistent sessions
 		StandardManager mgr = new StandardManager();
 		mgr.setPathname(null);
-		ctx.setManager(mgr);
+		context.setManager(mgr);
 
 		// Delay for requests to stop processing in milliseconds
-		((StandardContext) ctx).setUnloadDelay(10000);
+		if (context instanceof StandardContext) {
+			((StandardContext) context).setUnloadDelay(10000);
+		}
 
-		configCustomClassLoader();
-		configCustomJarScanner();
+		configCustomClassLoader(context);
+		configCustomJarScanner(context);
 
 	}
 
@@ -299,23 +289,27 @@ public class TomcatLauncherProvider implements LdeProvider {
 	 * <p>
 	 * Each WebApp context has its own class loader to isolate the class paths.
 	 * </p>
+	 *
+	 * @param context the context to configure
 	 */
-	protected void configCustomClassLoader() {
+	protected void configCustomClassLoader(final Context context) {
 		// Wrap the ClassLoader of the launcher so it is picked up StandardJarScanner
 		// as a "WebApp" class loader and it gets its classes scanned for annotations.
 		ClassLoader loader = getClass().getClassLoader();
 		if (loader instanceof URLClassLoader) {
 			ClassLoader wrapper = new URLClassLoader(((URLClassLoader) loader).getURLs(), loader);
-			getContext().setParentClassLoader(wrapper);
+			context.setParentClassLoader(wrapper);
 		}
 	}
 
 	/**
 	 * Configure a custom jar scanner.
+	 *
+	 * @param context the context to configure
 	 */
-	protected void configCustomJarScanner() {
+	protected void configCustomJarScanner(final Context context) {
 		if (Didums.hasService(CustomJarScanner.class)) {
-			getContext().setJarScanner(Didums.getService(CustomJarScanner.class));
+			context.setJarScanner(Didums.getService(CustomJarScanner.class));
 		}
 	}
 
