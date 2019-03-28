@@ -32,7 +32,7 @@ import org.apache.tomcat.util.scan.Constants;
  * Simulate a WAR structure by defining a class directory and a lib directory.
  * </p>
  * <p>
- * If using surefire, for tomcat to do its jar scanning correctly the<code>useSystemClassLoader</code> needs to be set to <code>flase</code>.
+ * If using surefire, for tomcat to do its jar scanning correctly the<code>useSystemClassLoader</code> needs to be set to <code>false</code>.
  * </p>
  */
 public class TomcatLauncherProvider implements LdeProvider {
