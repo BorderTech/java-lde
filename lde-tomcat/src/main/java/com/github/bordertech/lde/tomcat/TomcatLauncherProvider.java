@@ -8,7 +8,10 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.List;
 import javax.servlet.ServletException;
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
@@ -28,6 +31,9 @@ import org.apache.tomcat.util.scan.Constants;
  * <p>
  * Simulate a WAR structure by defining a class directory and a lib directory.
  * </p>
+ * <p>
+ * If using surefire, for tomcat to do its jar scanning correctly the<code>useSystemClassLoader</code> needs to be set to <code>flase</code>.
+ * </p>
  */
 public class TomcatLauncherProvider implements LdeProvider {
 
@@ -39,6 +45,7 @@ public class TomcatLauncherProvider implements LdeProvider {
 	private static final int DEFAULT_PORT = Config.getInstance().getInt("lde.tomcat.port", 8080);
 	private static final boolean FIND_PORT = Config.getInstance().getBoolean("lde.tomcat.port.find", false);
 	private static final String CONTEXT_PATH = Config.getInstance().getString("lde.tomcat.context.path", "/lde");
+	private static final boolean USE_WRAPPER_CLASSLOADER = Config.getInstance().getBoolean("lde.tomcat.use.wrapper.classloader", true);
 
 	private Tomcat tomcat = null;
 
@@ -287,17 +294,17 @@ public class TomcatLauncherProvider implements LdeProvider {
 	/**
 	 * Configure the WebApp context class loader.
 	 * <p>
-	 * Each WebApp context has its own class loader to isolate the class paths.
+	 * Each WebApp context has its own class loader to isolate the class paths. However, the tomcat StandardJarScanner only scans classes it thinks is
+	 * a web application dependency. Therefore we need to put the project classes into a custom class loader so they are scanned.
 	 * </p>
 	 *
 	 * @param context the context to configure
 	 */
 	protected void configCustomClassLoader(final Context context) {
-		// Wrap the ClassLoader of the launcher so it is picked up StandardJarScanner
-		// as a "WebApp" class loader and it gets its classes scanned for annotations.
-		ClassLoader loader = getClass().getClassLoader();
-		if (loader instanceof URLClassLoader) {
-			ClassLoader wrapper = new URLClassLoader(((URLClassLoader) loader).getURLs(), loader);
+		if (USE_WRAPPER_CLASSLOADER) {
+			// Put all the classpath URLS into a new ClassLoader so the StandardJarScanner will scan them as a potential webapp library.
+			ClassLoader loader = TomcatLauncherProvider.class.getClassLoader();
+			ClassLoader wrapper = new URLClassLoader(retrieveClassLoaderUrls(loader), loader);
 			context.setParentClassLoader(wrapper);
 		}
 	}
@@ -311,6 +318,28 @@ public class TomcatLauncherProvider implements LdeProvider {
 		if (Didums.hasService(CustomJarScanner.class)) {
 			context.setJarScanner(Didums.getService(CustomJarScanner.class));
 		}
+	}
+
+	/**
+	 * Retrieve all the URLS in the class loader tree.
+	 *
+	 * @param current the current class loader
+	 * @return the URLS of the class loader tree
+	 */
+	protected URL[] retrieveClassLoaderUrls(final ClassLoader current) {
+		List<URL> urls = new ArrayList<>();
+		ClassLoader loader = current;
+		while (loader != null) {
+			if (loader instanceof URLClassLoader) {
+				for (URL url : ((URLClassLoader) loader).getURLs()) {
+					if (!urls.contains(url)) {
+						urls.add(url);
+					}
+				}
+			}
+			loader = loader.getParent();
+		}
+		return urls.toArray(new URL[]{});
 	}
 
 	/**
