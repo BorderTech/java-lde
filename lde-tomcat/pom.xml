@@ -15,6 +15,8 @@
 	<packaging>jar</packaging>
 
 	<properties>
+		<!-- Checkstyle has false positive on hiding constructor -->
+		<checkstyle.excludes>**/TomcatLauncherProxy.java</checkstyle.excludes>
 		<bt.spotbugs.exclude.files>${bt.spotbugs.exclude.file},spotbugs-exclude-filter.xml</bt.spotbugs.exclude.files>
 	</properties>
 

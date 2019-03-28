@@ -9,6 +9,12 @@ import java.util.Map;
  */
 public final class CrossStateUtil {
 
+	/**
+	 * Private constructor.
+	 */
+	private CrossStateUtil() {
+	}
+
 	private static final Map<String, LdeProvider> PROVIDERS = new HashMap<>();
 
 	/**

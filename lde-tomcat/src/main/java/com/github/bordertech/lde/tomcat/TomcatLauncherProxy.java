@@ -8,12 +8,6 @@ import com.github.bordertech.lde.api.LdeLauncher;
 public final class TomcatLauncherProxy {
 
 	/**
-	 * Private constructor.
-	 */
-	private TomcatLauncherProxy() {
-	}
-
-	/**
 	 * Launch Tomcat.
 	 *
 	 * @param args main arguments
