@@ -15,8 +15,8 @@
 	<packaging>maven-plugin</packaging>
 
 	<properties>
-		<bt.qa.skip>true</bt.qa.skip>
 		<bt.fail.enforcer>false</bt.fail.enforcer>
+		<bt.spotbugs.exclude.files>${bt.spotbugs.exclude.file},spotbugs-exclude-filter.xml</bt.spotbugs.exclude.files>
 	</properties>
 
 	<dependencies>
