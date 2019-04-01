@@ -27,7 +27,7 @@ public abstract class AbstractStartMojo extends AbstractIdMojo {
 	@Parameter(defaultValue = "30")
 	private int waitReadySeconds;
 
-	@Parameter(defaultValue = "false", property = "lde.provider.block")
+	@Parameter(defaultValue = "false")
 	private boolean block;
 
 	@Parameter(defaultValue = "test")

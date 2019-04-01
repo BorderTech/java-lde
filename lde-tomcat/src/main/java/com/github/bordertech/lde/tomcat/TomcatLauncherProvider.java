@@ -32,7 +32,8 @@ import org.apache.tomcat.util.scan.Constants;
  * Simulate a WAR structure by defining a class directory and a lib directory.
  * </p>
  * <p>
- * If using surefire, for tomcat to do its jar scanning correctly the <code>useSystemClassLoader</code> needs to be set to <code>false</code>.
+ * If using surefire, for tomcat to do its jar scanning correctly the <code>useSystemClassLoader</code> property needs to be set to
+ * <code>false</code>.
  * </p>
  */
 public class TomcatLauncherProvider implements LdeProvider {
@@ -307,7 +308,8 @@ public class TomcatLauncherProvider implements LdeProvider {
 	 */
 	protected void configCustomClassLoader(final Context context) {
 		// Put all the classpath URLS into a new ClassLoader so the StandardJarScanner will scan them as a potential webapp library.
-		// This is needed for Tomcat to find the Servelt 3 annocations when setting up the webapp.
+		// This is needed for Tomcat to find the Servlet 3 annotations when setting up the webapp.
+		// The "isWebApp" logic in the tomcat jar scanner is not so good.
 		ClassLoader loader = TomcatLauncherProvider.class.getClassLoader();
 		ClassLoader wrapper = new URLClassLoader(retrieveClassLoaderUrls(loader), loader);
 		context.setParentClassLoader(wrapper);

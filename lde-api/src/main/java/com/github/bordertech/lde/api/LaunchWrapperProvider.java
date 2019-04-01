@@ -1,7 +1,10 @@
 package com.github.bordertech.lde.api;
 
 /**
- * Provider that wraps the default launcher. This can be used by the LDE MOJO.
+ * Provider that wraps the default launcher.
+ * <p>
+ * This can be used as a provider that points to the default launcher. Useful in the MOJO launcher.
+ * </p>
  */
 public class LaunchWrapperProvider implements LdeProvider {
 
