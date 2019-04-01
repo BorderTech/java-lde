@@ -4,9 +4,9 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 /**
- * Abstract LDE provider mojo.
+ * Abstract MOJO that has the LDE Provider ID.
  */
-public abstract class AbstractProviderMojo extends AbstractMojo {
+public abstract class AbstractIdMojo extends AbstractMojo {
 
 	@Parameter(defaultValue = "default")
 	private String providerId;
@@ -14,7 +14,7 @@ public abstract class AbstractProviderMojo extends AbstractMojo {
 	/**
 	 * @return the provider id
 	 */
-	public String getProviderId() {
+	protected String getProviderId() {
 		return providerId;
 	}
 

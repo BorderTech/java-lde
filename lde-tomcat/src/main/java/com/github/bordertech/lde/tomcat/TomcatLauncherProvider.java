@@ -32,7 +32,7 @@ import org.apache.tomcat.util.scan.Constants;
  * Simulate a WAR structure by defining a class directory and a lib directory.
  * </p>
  * <p>
- * If using surefire, for tomcat to do its jar scanning correctly the<code>useSystemClassLoader</code> needs to be set to <code>false</code>.
+ * If using surefire, for tomcat to do its jar scanning correctly the <code>useSystemClassLoader</code> needs to be set to <code>false</code>.
  * </p>
  */
 public class TomcatLauncherProvider implements LdeProvider {
@@ -45,7 +45,8 @@ public class TomcatLauncherProvider implements LdeProvider {
 	private static final int DEFAULT_PORT = Config.getInstance().getInt("lde.tomcat.port", 8080);
 	private static final boolean FIND_PORT = Config.getInstance().getBoolean("lde.tomcat.port.find", false);
 	private static final String CONTEXT_PATH = Config.getInstance().getString("lde.tomcat.context.path", "/lde");
-	private static final boolean USE_WRAPPER_CLASSLOADER = Config.getInstance().getBoolean("lde.tomcat.use.wrapper.classloader", true);
+	private static final boolean CUSTOM_CLASSLOADER_ENABLED = Config.getInstance().getBoolean("lde.tomcat.custom.classloader.enabled", true);
+	private static final boolean CUSTOM_JARSCANNER_ENABLED = Config.getInstance().getBoolean("lde.tomcat.custom.jarscanner.enabled", true);
 
 	private Tomcat tomcat = null;
 
@@ -286,8 +287,12 @@ public class TomcatLauncherProvider implements LdeProvider {
 			((StandardContext) context).setUnloadDelay(10000);
 		}
 
-		configCustomClassLoader(context);
-		configCustomJarScanner(context);
+		if (isCustomClassLoaderEnabled()) {
+			configCustomClassLoader(context);
+		}
+		if (isCustomJarScannerEnabled()) {
+			configCustomJarScanner(context);
+		}
 
 	}
 
@@ -301,12 +306,11 @@ public class TomcatLauncherProvider implements LdeProvider {
 	 * @param context the context to configure
 	 */
 	protected void configCustomClassLoader(final Context context) {
-		if (USE_WRAPPER_CLASSLOADER) {
-			// Put all the classpath URLS into a new ClassLoader so the StandardJarScanner will scan them as a potential webapp library.
-			ClassLoader loader = TomcatLauncherProvider.class.getClassLoader();
-			ClassLoader wrapper = new URLClassLoader(retrieveClassLoaderUrls(loader), loader);
-			context.setParentClassLoader(wrapper);
-		}
+		// Put all the classpath URLS into a new ClassLoader so the StandardJarScanner will scan them as a potential webapp library.
+		// This is needed for Tomcat to find the Servelt 3 annocations when setting up the webapp.
+		ClassLoader loader = TomcatLauncherProvider.class.getClassLoader();
+		ClassLoader wrapper = new URLClassLoader(retrieveClassLoaderUrls(loader), loader);
+		context.setParentClassLoader(wrapper);
 	}
 
 	/**
@@ -315,6 +319,7 @@ public class TomcatLauncherProvider implements LdeProvider {
 	 * @param context the context to configure
 	 */
 	protected void configCustomJarScanner(final Context context) {
+		// Check if a custom jar scanner has bee defined
 		if (Didums.hasService(CustomJarScanner.class)) {
 			context.setJarScanner(Didums.getService(CustomJarScanner.class));
 		}
@@ -340,6 +345,20 @@ public class TomcatLauncherProvider implements LdeProvider {
 			loader = loader.getParent();
 		}
 		return urls.toArray(new URL[]{});
+	}
+
+	/**
+	 * @return true if use custom class loader
+	 */
+	protected boolean isCustomClassLoaderEnabled() {
+		return CUSTOM_CLASSLOADER_ENABLED;
+	}
+
+	/**
+	 * @return true if use custom jar scanner
+	 */
+	protected boolean isCustomJarScannerEnabled() {
+		return CUSTOM_JARSCANNER_ENABLED;
 	}
 
 	/**

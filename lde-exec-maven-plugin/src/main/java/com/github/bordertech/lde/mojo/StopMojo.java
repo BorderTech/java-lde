@@ -10,13 +10,13 @@ import org.apache.maven.plugins.annotations.Mojo;
  * Stop LDE provider.
  */
 @Mojo(name = "stop", defaultPhase = LifecyclePhase.POST_INTEGRATION_TEST)
-public class StopMojo extends AbstractProviderMojo {
+public class StopMojo extends AbstractIdMojo {
 
 	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
-		LdeProvider provider = CrossStateUtil.removeProvider(getProviderId());
-		if (provider != null) {
-			provider.stopServer();
+		LdeProvider providerId = CrossStateUtil.removeProvider(getProviderId());
+		if (providerId != null) {
+			providerId.stopServer();
 		}
 	}
 

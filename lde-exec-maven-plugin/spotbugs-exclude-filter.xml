@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FindBugsFilter>
 
-	<!-- False Positive on Setting up Tomcat -->
+	<!-- False Positive on Setting up URL ClassLoader -->
 	<Match>
 		<Bug pattern="PATH_TRAVERSAL_IN" />
 	</Match>
