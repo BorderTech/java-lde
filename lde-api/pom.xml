@@ -14,6 +14,11 @@
 
 	<packaging>jar</packaging>
 
+	<properties>
+		<!-- Checkstyle has false positive on hiding constructor -->
+		<checkstyle.excludes>**/LdeMain.java</checkstyle.excludes>
+	</properties>
+
 	<dependencies>
 		<!-- Didums -->
 		<dependency>
@@ -28,5 +33,7 @@
 		</dependency>
 
 	</dependencies>
+
+
 
 </project>

@@ -16,10 +16,4 @@ public final class TomcatLauncherProxy {
 		LdeLauncher.launchServer();
 	}
 
-	/**
-	 * Private constructor.
-	 */
-	private TomcatLauncherProxy() {
-	}
-
 }

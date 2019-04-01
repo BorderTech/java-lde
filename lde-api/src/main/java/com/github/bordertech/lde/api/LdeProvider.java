@@ -1,11 +1,9 @@
 package com.github.bordertech.lde.api;
 
 /**
- * LDE Provider.
- *
- * @param <T> the server type
+ * LDE server provider (eg embedded tomcat).
  */
-public interface LdeProvider<T> {
+public interface LdeProvider {
 
 	/**
 	 * Launch the server.
@@ -15,7 +13,7 @@ public interface LdeProvider<T> {
 	/**
 	 * @param block true if block thread on starting server
 	 */
-	void launchServer(final boolean block);
+	void launchServer(boolean block);
 
 	/**
 	 * Stop server.
@@ -26,11 +24,6 @@ public interface LdeProvider<T> {
 	 * @return the port being used by web server
 	 */
 	int getPort();
-
-	/**
-	 * @return the web server instance
-	 */
-	T getServer();
 
 	/**
 	 * @return true if find a free port to start web server
