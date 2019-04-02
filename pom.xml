@@ -5,7 +5,7 @@
 	<groupId>com.github.bordertech.lde</groupId>
 	<name>lde-parent</name>
 	<artifactId>lde-parent</artifactId>
-	<version>1.0.2-SNAPSHOT</version>
+	<version>1.0.3-SNAPSHOT</version>
 
 	<parent>
 		<groupId>com.github.bordertech.common</groupId>
