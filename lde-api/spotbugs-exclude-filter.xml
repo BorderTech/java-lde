@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+
+	<!-- False Positive on Setting up Tomcat -->
+	<Match>
+		<Bug pattern="PATH_TRAVERSAL_IN" />
+	</Match>
+
+</FindBugsFilter>

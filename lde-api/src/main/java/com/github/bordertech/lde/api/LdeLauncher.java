@@ -42,7 +42,7 @@ public final class LdeLauncher {
 	 * @return true if server is running
 	 */
 	public static boolean isRunning() {
-		return getProvider().isRunning();
+		return PROVIDER.isRunning();
 	}
 
 	/**

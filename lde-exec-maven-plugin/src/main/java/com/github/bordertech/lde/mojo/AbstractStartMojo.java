@@ -43,6 +43,8 @@ public abstract class AbstractStartMojo extends AbstractIdMojo {
 	 * @throws MojoFailureException a MOJO failure exception
 	 */
 	protected void createAndStartProvider() throws MojoExecutionException, MojoFailureException {
+		// Check for config overrides
+		setupProviderConfig();
 		// Get provider
 		LdeProvider provider = createProvider();
 		// Start
@@ -192,6 +194,17 @@ public abstract class AbstractStartMojo extends AbstractIdMojo {
 				urls.add(url);
 			}
 		}
+	}
+
+	/**
+	 * Pass the MOJO settings to the provider.
+	 *
+	 * @throws MojoFailureException exception if cannot setup configuration
+	 */
+	protected void setupProviderConfig() throws MojoFailureException {
+		// Working Directory
+		String basedir = project.getBasedir().getAbsolutePath();
+		System.setProperty(LdeProvider.PARAM_WORKING_DIRECTORY_KEY, basedir);
 	}
 
 }

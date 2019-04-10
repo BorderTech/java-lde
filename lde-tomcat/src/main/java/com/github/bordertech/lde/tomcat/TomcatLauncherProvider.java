@@ -10,6 +10,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.ServletException;
@@ -39,12 +40,10 @@ import org.apache.tomcat.util.scan.Constants;
 public class TomcatLauncherProvider implements LdeProvider {
 
 	private static final Log LOG = LogFactory.getLog(TomcatLauncherProvider.class);
-	private static final String BASE_DIR = Config.getInstance().getString("lde.tomcat.base.dir", "/target/tomcat");
-	private static final String WEBAPP_DIR = Config.getInstance().getString("lde.tomcat.webapp.dir", "/target/webapp");
+	private static final String BASE_DIR = Config.getInstance().getString("lde.tomcat.base.dir", "target/tomcat");
+	private static final String WEBAPP_DIR = Config.getInstance().getString("lde.tomcat.webapp.dir", "target/webapp");
 	private static final String WEBAPP_CLASSES_DIR = Config.getInstance().getString("lde.tomcat.webapp.classes.dir");
-	private static final String WEBAPP_LIB_DIR = Config.getInstance().getString("lde.tomcat.webapp.lib.dir", "/target/dependency");
-	private static final int DEFAULT_PORT = Config.getInstance().getInt("lde.tomcat.port", 8080);
-	private static final boolean FIND_PORT = Config.getInstance().getBoolean("lde.tomcat.port.find", false);
+	private static final String WEBAPP_LIB_DIR = Config.getInstance().getString("lde.tomcat.webapp.lib.dir", "target/dependency");
 	private static final String CONTEXT_PATH = Config.getInstance().getString("lde.tomcat.context.path", "/lde");
 	private static final boolean CUSTOM_CLASSLOADER_ENABLED = Config.getInstance().getBoolean("lde.tomcat.custom.classloader.enabled", true);
 	private static final boolean CUSTOM_JARSCANNER_ENABLED = Config.getInstance().getBoolean("lde.tomcat.custom.jarscanner.enabled", true);
@@ -111,11 +110,6 @@ public class TomcatLauncherProvider implements LdeProvider {
 	@Override
 	public int getPort() {
 		return isRunning() ? getTomcat().getConnector().getPort() : -1;
-	}
-
-	@Override
-	public boolean isFindPort() {
-		return FIND_PORT;
 	}
 
 	/**
@@ -364,13 +358,6 @@ public class TomcatLauncherProvider implements LdeProvider {
 	}
 
 	/**
-	 * @return the default PORT for TOMCAT to listen on
-	 */
-	protected int getDefaultPort() {
-		return DEFAULT_PORT;
-	}
-
-	/**
 	 * The WebApp context where "" is root.
 	 *
 	 * @return the webapp context path
@@ -388,7 +375,7 @@ public class TomcatLauncherProvider implements LdeProvider {
 	 * @return the directory for TOMCAT to be installed.
 	 */
 	protected String getBaseDir() {
-		return prefixUserDir(BASE_DIR);
+		return prefixWorkingDir(BASE_DIR);
 	}
 
 	/**
@@ -400,7 +387,7 @@ public class TomcatLauncherProvider implements LdeProvider {
 	 * @return the webapp directory
 	 */
 	protected String getWebAppDir() {
-		return prefixUserDir(WEBAPP_DIR);
+		return prefixWorkingDir(WEBAPP_DIR);
 	}
 
 	/**
@@ -412,7 +399,7 @@ public class TomcatLauncherProvider implements LdeProvider {
 	 * @return the lib directory
 	 */
 	protected String getLibDir() {
-		return prefixUserDir(WEBAPP_LIB_DIR);
+		return prefixWorkingDir(WEBAPP_LIB_DIR);
 	}
 
 	/**
@@ -421,32 +408,42 @@ public class TomcatLauncherProvider implements LdeProvider {
 	 * @return the classes directory
 	 */
 	protected String getClassesDir() {
-		return prefixUserDir(WEBAPP_CLASSES_DIR);
+		return prefixWorkingDir(WEBAPP_CLASSES_DIR);
 	}
 
 	/**
-	 * Prefix a directory with the system user directory.
+	 * Prefix a directory with the working directory.
 	 *
 	 * @param dir the directory to append the working directory
 	 * @return the dir with the working directory prefix
 	 */
-	protected String prefixUserDir(final String dir) {
+	protected String prefixWorkingDir(final String dir) {
 		if (dir == null) {
 			return null;
 		}
-		String sep = dir.startsWith("/") ? "" : "/";
-		String path = System.getProperty("user.dir") + sep + dir;
-		if (dir.startsWith("/target")) {
-			File file = new File(path);
-			if (!file.exists()) {
-				try {
-					file.mkdir();
-				} catch (Exception e) {
-					throw new IllegalStateException("Unable to create user directorty [" + path + "]. " + e.getMessage(), e);
-				}
+		Path path = getWorkingDirectory().resolve(dir);
+		checkPath(path);
+		return path.toString();
+	}
+
+	/**
+	 * Check the path exists or create it.
+	 *
+	 * @param path the directory to check exists
+	 */
+	protected void checkPath(final Path path) {
+
+		File file = path.toFile();
+		if (!file.exists()) {
+			if (!file.mkdirs()) {
+				throw new IllegalStateException("Cannot create path [" + path + "]");
 			}
 		}
-		return path;
+
+		if (!file.isDirectory()) {
+			throw new IllegalStateException(
+					"Path [" + path + "] exists and is not a directory");
+		}
 	}
 
 	/**
@@ -455,7 +452,7 @@ public class TomcatLauncherProvider implements LdeProvider {
 	 * @return the next free port starting with the default port
 	 */
 	protected int findFreePort() {
-		int start = DEFAULT_PORT;
+		int start = getDefaultPort();
 		LOG.info("Finding a free port for TOMCAT starting at " + start + ".");
 		int tries = 0;
 		while (!isTcpPortAvailable(start)) {
