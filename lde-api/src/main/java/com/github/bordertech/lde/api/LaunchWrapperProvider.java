@@ -1,7 +1,5 @@
 package com.github.bordertech.lde.api;
 
-import java.nio.file.Path;
-
 /**
  * Provider that wraps the default launcher.
  * <p>
@@ -33,11 +31,6 @@ public class LaunchWrapperProvider implements LdeProvider {
 	}
 
 	@Override
-	public boolean isFindPort() {
-		return backing.isFindPort();
-	}
-
-	@Override
 	public String getBaseUrl() {
 		return backing.getBaseUrl();
 	}
@@ -45,16 +38,6 @@ public class LaunchWrapperProvider implements LdeProvider {
 	@Override
 	public boolean isRunning() {
 		return backing.isRunning();
-	}
-
-	@Override
-	public int getDefaultPort() {
-		return backing.getDefaultPort();
-	}
-
-	@Override
-	public Path getWorkingDirectory() {
-		return backing.getWorkingDirectory();
 	}
 
 }

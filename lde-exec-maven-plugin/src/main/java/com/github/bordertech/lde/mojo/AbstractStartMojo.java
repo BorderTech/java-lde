@@ -1,5 +1,6 @@
 package com.github.bordertech.lde.mojo;
 
+import com.github.bordertech.lde.api.ConfigUtil;
 import com.github.bordertech.lde.api.LdeProvider;
 import java.io.File;
 import java.lang.reflect.Proxy;
@@ -204,7 +205,7 @@ public abstract class AbstractStartMojo extends AbstractIdMojo {
 	protected void setupProviderConfig() throws MojoFailureException {
 		// Working Directory
 		String basedir = project.getBasedir().getAbsolutePath();
-		System.setProperty(LdeProvider.PARAM_WORKING_DIRECTORY_KEY, basedir);
+		System.setProperty(ConfigUtil.PARAM_WORKING_DIRECTORY_KEY, basedir);
 	}
 
 }
