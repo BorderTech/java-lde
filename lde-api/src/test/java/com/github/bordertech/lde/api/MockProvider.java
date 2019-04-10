@@ -43,11 +43,6 @@ public class MockProvider implements LdeProvider {
 	}
 
 	@Override
-	public boolean isFindPort() {
-		throw new UnsupportedOperationException("Not supported yet.");
-	}
-
-	@Override
 	public String getBaseUrl() {
 		return "base";
 	}

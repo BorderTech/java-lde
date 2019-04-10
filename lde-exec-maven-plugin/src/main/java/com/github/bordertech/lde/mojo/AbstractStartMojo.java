@@ -1,5 +1,6 @@
 package com.github.bordertech.lde.mojo;
 
+import com.github.bordertech.lde.api.ConfigUtil;
 import com.github.bordertech.lde.api.LdeProvider;
 import java.io.File;
 import java.lang.reflect.Proxy;
@@ -43,6 +44,8 @@ public abstract class AbstractStartMojo extends AbstractIdMojo {
 	 * @throws MojoFailureException a MOJO failure exception
 	 */
 	protected void createAndStartProvider() throws MojoExecutionException, MojoFailureException {
+		// Check for config overrides
+		setupProviderConfig();
 		// Get provider
 		LdeProvider provider = createProvider();
 		// Start
@@ -192,6 +195,17 @@ public abstract class AbstractStartMojo extends AbstractIdMojo {
 				urls.add(url);
 			}
 		}
+	}
+
+	/**
+	 * Pass the MOJO settings to the provider.
+	 *
+	 * @throws MojoFailureException exception if cannot setup configuration
+	 */
+	protected void setupProviderConfig() throws MojoFailureException {
+		// Working Directory
+		String basedir = project.getBasedir().getAbsolutePath();
+		System.setProperty(ConfigUtil.PARAM_WORKING_DIRECTORY_KEY, basedir);
 	}
 
 }

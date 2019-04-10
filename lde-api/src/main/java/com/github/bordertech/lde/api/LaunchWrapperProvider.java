@@ -31,11 +31,6 @@ public class LaunchWrapperProvider implements LdeProvider {
 	}
 
 	@Override
-	public boolean isFindPort() {
-		return backing.isFindPort();
-	}
-
-	@Override
 	public String getBaseUrl() {
 		return backing.getBaseUrl();
 	}

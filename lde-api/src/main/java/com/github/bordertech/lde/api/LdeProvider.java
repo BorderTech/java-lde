@@ -26,11 +26,6 @@ public interface LdeProvider {
 	int getPort();
 
 	/**
-	 * @return true if find a free port to start web server
-	 */
-	boolean isFindPort();
-
-	/**
 	 * @return the base URL (with context)
 	 */
 	String getBaseUrl();
