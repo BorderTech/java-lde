@@ -15,9 +15,9 @@
 	<packaging>jar</packaging>
 
 	<properties>
-		<!-- Checkstyle has false positive on hiding constructor -->
-		<checkstyle.excludes>**/TomcatLauncherProxy.java</checkstyle.excludes>
-		<bt.spotbugs.exclude.files>${bt.spotbugs.exclude.file},spotbugs-exclude-filter.xml</bt.spotbugs.exclude.files>
+		<checkstyle.suppressions.location>${basedir}/checkstyles-suppression.xml</checkstyle.suppressions.location>
+		<spotbugs.excludeFilterFile>${basedir}/spotbugs-exclude-filter.xml</spotbugs.excludeFilterFile>
+		<bt.tomcat.version>8.5.40</bt.tomcat.version>
 	</properties>
 
 	<dependencies>
@@ -33,13 +33,13 @@
 		<dependency>
 			<groupId>org.apache.tomcat.embed</groupId>
 			<artifactId>tomcat-embed-core</artifactId>
-			<version>8.5.37</version>
+			<version>${bt.tomcat.version}</version>
 		</dependency>
 		<!-- Tomcat JSP -->
 		<dependency>
 			<groupId>org.apache.tomcat.embed</groupId>
 			<artifactId>tomcat-embed-jasper</artifactId>
-			<version>8.5.37</version>
+			<version>${bt.tomcat.version}</version>
 		</dependency>
 
 	</dependencies>

@@ -15,9 +15,8 @@
 	<packaging>jar</packaging>
 
 	<properties>
-		<!-- Checkstyle has false positive on hiding constructor -->
-		<checkstyle.excludes>**/LdeMain.java</checkstyle.excludes>
-		<bt.spotbugs.exclude.files>${bt.spotbugs.exclude.file},spotbugs-exclude-filter.xml</bt.spotbugs.exclude.files>
+		<checkstyle.suppressions.location>${basedir}/checkstyles-suppression.xml</checkstyle.suppressions.location>
+		<spotbugs.excludeFilterFile>${basedir}/spotbugs-exclude-filter.xml</spotbugs.excludeFilterFile>
 	</properties>
 
 	<dependencies>

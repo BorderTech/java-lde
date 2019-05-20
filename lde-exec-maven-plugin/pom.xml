@@ -15,8 +15,8 @@
 	<packaging>maven-plugin</packaging>
 
 	<properties>
-		<bt.fail.enforcer>false</bt.fail.enforcer>
-		<bt.spotbugs.exclude.files>${bt.spotbugs.exclude.file},spotbugs-exclude-filter.xml</bt.spotbugs.exclude.files>
+		<enforcer.fail>false</enforcer.fail>
+		<spotbugs.excludeFilterFile>${basedir}/spotbugs-exclude-filter.xml</spotbugs.excludeFilterFile>
 	</properties>
 
 	<dependencies>
@@ -32,26 +32,26 @@
 		<dependency>
 			<groupId>org.apache.maven</groupId>
 			<artifactId>maven-plugin-api</artifactId>
-			<version>3.5.2</version>
+			<version>3.6.1</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.maven.plugin-tools</groupId>
 			<artifactId>maven-plugin-annotations</artifactId>
-			<version>3.5.2</version>
+			<version>3.6.0</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.maven</groupId>
 			<artifactId>maven-core</artifactId>
-			<version>3.5.2</version>
+			<version>3.6.1</version>
 			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>27.0.1-jre</version>
+			<version>27.1-jre</version>
 			<scope>provided</scope>
 		</dependency>
 
