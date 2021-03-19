@@ -17,7 +17,7 @@
 	<properties>
 		<checkstyle.suppressions.location>${basedir}/checkstyles-suppression.xml</checkstyle.suppressions.location>
 		<spotbugs.excludeFilterFile>${basedir}/spotbugs-exclude-filter.xml</spotbugs.excludeFilterFile>
-		<bt.tomcat.version>8.5.43</bt.tomcat.version>
+		<bt.tomcat.version>10.0.4</bt.tomcat.version>
 	</properties>
 
 	<dependencies>
